@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- kubera — alternate mark (Option B: coin/token disc with cut-out monogram). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="kubera">
+  <defs>
+    <linearGradient id="kc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="#0b0e14"/>
+  <circle cx="80" cy="80" r="70" fill="none" stroke="url(#kc)" stroke-width="4"/>
+  <circle cx="80" cy="80" r="58" fill="none" stroke="url(#kc)" stroke-width="2" opacity="0.5"/>
+  <g stroke="url(#kc)" stroke-width="12" stroke-linecap="round" fill="none">
+    <line x1="60" y1="46" x2="60" y2="114"/>
+    <line x1="60" y1="83" x2="100" y2="51"/>
+    <line x1="60" y1="83" x2="100" y2="115"/>
+  </g>
+</svg>
