@@ -1,10 +1,10 @@
 <!--
-  kubera — investor one-pager.
+  Kubera — investor one-pager.
   Keep it to ~one page per language. [[ … ]] = fill with verified data before sending.
   Do NOT include unverifiable claims (audit, TVL, raise terms, backers) until confirmed.
 -->
 
-# kubera — One-Pager
+# Kubera — One-Pager
 
 > **An open, provable Hyperliquid.** Open infrastructure for on-chain perpetuals — self-hostable, API-compatible, and verifiable.
 > **一个开放、可证明的 Hyperliquid。** 链上永续合约的开放基础设施 —— 可自托管、API 兼容、可验证。
@@ -17,9 +17,9 @@
 **中文 —** 永续合约是加密最大的市场,链上永续正快速从中心化交易所抢占份额。但品类龙头是**封闭、单一运营方**的技术栈:用户与机构必须把撮合、风控、偿付能力都托付给一个黑箱。市场上缺少可信中立、开放、可自托管的同类产品。
 
 ## Solution / 解决方案
-**EN —** kubera is an open-source perpetuals chain that is **drop-in compatible with the Hyperliquid API and SDK**, **deterministic and state-provable**, and **self-hostable as a single binary**. Anyone — a fund, an exchange, a region — can run it, verify it, and extend it without trusting a closed operator.
+**EN —** Kubera is an open-source perpetuals chain that is **drop-in compatible with the Hyperliquid API and SDK**, **deterministic and state-provable**, and **self-hostable as a single binary**. Anyone — a fund, an exchange, a region — can run it, verify it, and extend it without trusting a closed operator.
 
-**中文 —** kubera 是一条开源永续合约链:**与 Hyperliquid API/SDK 无缝兼容**、**确定性且状态可证明**、**单二进制即可自托管**。任何基金、交易所或地区都能自行运行、验证并扩展,无需信任封闭运营方。
+**中文 —** Kubera 是一条开源永续合约链:**与 Hyperliquid API/SDK 无缝兼容**、**确定性且状态可证明**、**单二进制即可自托管**。任何基金、交易所或地区都能自行运行、验证并扩展,无需信任封闭运营方。
 
 ## Why now / 为什么是现在
 - **EN —** Perps dominate crypto volume; on-chain share is growing fast. The proven demand exists; the open, neutral supply does not — yet.
