@@ -29,6 +29,7 @@
   <img alt="Status" src="https://img.shields.io/badge/status-active%20development-brightgreen"/>
   <img alt="API" src="https://img.shields.io/badge/API-Hyperliquid--compatible-5b8def"/>
   <img alt="CI" src="https://img.shields.io/badge/CI-fmt%20%2B%20clippy%20%2B%20tests%20%2B%20loom-blue"/>
+  <img alt="Contracts" src="https://img.shields.io/badge/contracts-Foundry%20%2B%20Solidity-363636"/>
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue"/>
 </p>
 
@@ -72,6 +73,7 @@ Kubera is building the open infrastructure for on-chain perpetual futures — th
 | 🛡️ **Institutional-grade risk engine** | Full liquidation waterfall — maintenance margin → insurance fund → auto-deleveraging (ADL). No production perp venue forgives bad debt; neither does Kubera. Solvency is enforced and provable. |
 | 🔒 **Money can't leak** | A per-block conservation invariant proves USDC is neither created nor destroyed (fees → insurance fund, bad debt socialized correctly). Two real accounting bugs were caught and fixed *by this check*. |
 | 🧱 **Engineered to not break** | Crash-transparent recovery (a recovered node is byte-identical to one that never crashed), concurrency proven deadlock-free with **loom**, property-based fuzzing, golden determinism tests, and a hard CI gate (`fmt` + `clippy -D warnings` + full tests + loom). |
+| 🌉 **Bridge-aware** | EVM-side bridge contracts and Rust watcher/signer/relayer paths are implemented together, with cross-language EIP-712 and calldata vectors pinning Solidity ↔ Rust byte compatibility. |
 | 🪶 **Self-hostable** | A single Rust binary: matching, perps, risk, storage, and an HTTP/WS API. Run it locally, in your VPC, or as a managed service. |
 
 ---
@@ -82,23 +84,27 @@ Kubera is a deterministic state machine over a versioned Merkle store. Every wri
 
 ```mermaid
 flowchart TB
+    EVM["EVM chains<br/>(Bridge2 contracts)"] -->|"deposits · lifecycle certs"| PROD
     SDK["Traders / Bots / MMs<br/>(Hyperliquid-compatible SDK)"] -->|"POST /exchange · /info · WS"| RPC["RPC / WebSocket API"]
     RPC --> POOL["Transaction Pool<br/>(EIP-712 verified)"]
+    BFT["HotStuff BFT stack<br/>(quorum-store · libp2p · MDBX)"] -.-> PROD
     POOL --> PROD["Block Producer<br/>(deterministic, no empty blocks)"]
     PROD --> SM["State Machine"]
     subgraph SM_MODULES["Execution modules"]
       MATCH["Matching engine<br/>(per-market locks)"]
       PERPS["Perps + Risk engine<br/>(margin · funding · liquidation waterfall · ADL)"]
       ORACLE["Oracle pricing"]
+      BRIDGE["Bridge accounting<br/>(deposits · withdrawals · lifecycle)"]
     end
     SM --> SM_MODULES
     SM -->|"StateTxn write-set"| STORE["Storage (MDBX)"]
     STORE --> JMT["JMT state tree<br/>(versioned · proofs · online pruning)"]
     JMT -->|"byte-reproducible"| ROOT["state_root + block_hash"]
+    SM -->|"withdrawal records"| RELAY["Withdrawal signer / relayer"] -->|"EIP-712 quorum txs"| EVM
     PROD -.metrics.-> OBS["Prometheus /metrics"]
 ```
 
-<sub>Crates — primitives · crypto · jmt · storage · execution · transaction-pool · rpc · node (+ consensus / network / visor for the multi-node roadmap).</sub>
+<sub>Chain crates — codec · primitives · crypto · jmt · storage · execution · transaction-pool · rpc · node · consensus · sync. Sibling workspaces provide the reusable perp engine, HotStuff stack, and EVM contracts.</sub>
 
 ---
 
@@ -107,9 +113,9 @@ flowchart TB
 | Phase | Scope | Status |
 |---|---|---|
 | **P1 — Single-node chain** | Self-hostable perp DEX: HL-compatible API, deterministic execution, persistent JMT state, liquidation waterfall + insurance fund + ADL, crash recovery, observability, hard CI. | ✅ **Built** |
-| **P2 — Multi-node consensus** | BFT consensus (HotStuff-family integration is designed), P2P gossip, block sync, multi-validator finality. | 🛠️ **Designed → in progress** |
-| **P3 — Markets & liquidity** | Spot markets, HLP-style liquidity vaults, richer order types, cross-margin products. | 🔭 **Planned** |
-| **P4 — Network & mainnet** | Production bridge, oracle committee, validator set, testnet → mainnet, governance. | 🔭 **Planned** |
+| **P2 — Multi-node consensus** | Reusable HotStuff-family stack, quorum-store, libp2p transport, durable MDBX storage, chain validator mode, state sync, and restart/rejoin paths. | 🛠️ **Implemented in pieces → hardening** |
+| **P3 — Markets & liquidity** | Spot markets, isolated/cross margin, TWAP + trigger order types, sub-accounts (vault-address routing), volume fee tiers + referrals — **shipped**; HLP-style liquidity vaults next. | 🛠️ **Markets shipped · liquidity next** |
+| **P4 — Bridge & mainnet** | EVM-side bridge contracts, deposit/lifecycle watchers, withdrawal signing + relay, validator-set sync, oracle committee, testnet → mainnet, governance. | 🛠️ **Bridge implemented · production hardening planned** |
 
 <!-- TODO: add target dates/quarters once committed. Investors want timelines. -->
 
@@ -118,6 +124,14 @@ flowchart TB
 ## ✅ Status
 
 P1 is built and self-verifying: the single-node chain runs end-to-end (submit → pool → produce → execute → persist → query), with a hard CI gate (rustfmt, clippy `-D warnings`, full test suite, loom concurrency model). Test coverage spans unit, integration, golden-determinism, property-based fuzzing, crash-recovery, and Hyperliquid-SDK conformance.
+
+The markets layer is now built on top: spot trading, isolated & cross margin, TWAP and trigger orders, sub-accounts with vault-address routing, and volume-tiered fees with referrals — each landed with the per-block conservation invariant and the CI gate intact. A reference web frontend (`interface`) ships alongside: its in-browser EIP-712 signing is byte-identical to the node (verified across every action type), and a live-node end-to-end suite drives all the new modules against a running chain.
+
+The reusable engine boundary is now explicit. `perp-engine` is a pure Rust business library split into deterministic types, fixed-point math, matching, risk, settlement, core execution, and simulation crates. It has no chain, database, network, system-time, randomness, or floating-point dependency; `chain` consumes it through adapter boundaries.
+
+Consensus and bridge work have moved beyond paper design. `hotstuff` is a standalone Rust workspace with consensus core, quorum-store/data availability, transport-agnostic networking, libp2p adapter, node runtime, durable MDBX storage, and a runnable 4-node reference app. `chain` has validator-mode wiring, state sync, bridge deposit/lifecycle system inputs, withdrawal records, signer/relayer paths, and validator-set sync, but the multi-validator path still needs real multi-machine soak, startup catch-up/config-digest hardening, and operational runbooks before it should be described as production-ready.
+
+The EVM-side bridge package (`contracts`) is implemented in Foundry: `Bridge2.sol` locks an EIP-2612 asset and releases it under strict >2/3 L1-validator authorization, with two-stage withdrawals, hot/cold validator sets, deposit-only pause, replay protection, finalizers, and cold-quorum recovery. Solidity and Rust share test vectors for the bridge EIP-712 domain, signed operations, calldata, validator-set hashes, and deposit events.
 
 <!-- TODO: replace with verified traction once available: testnet live, partners, design partners, LOIs, audit status. Do NOT claim an audit until one exists. -->
 
@@ -138,8 +152,11 @@ Kubera is positioned as the open, credibly-neutral counterpart to the leading cl
 ## 📦 Repositories
 
 <!-- TODO: pin the public repos on the org page and link them here -->
-- **`chain`** — the single-node perpetuals chain (P1).
-- **`perp-engine`** — perps core / math / risk / types.
+- **`chain`** — the single-node perpetuals chain (P1) + markets layer (P3 spot / margin / sub-accounts / fees).
+- **`perp-engine`** — deterministic perps business library: types / math / matching / risk / settlement / core / simulation.
+- **`hotstuff`** — reusable HotStuff-family BFT stack: consensus core, quorum-store, libp2p, node runtime, MDBX persistence, local 4-node demo.
+- **`contracts`** — Foundry bridge package: `Bridge2`, EIP-712 signatures, Multicall3, local scripts, Solidity ↔ Rust vectors.
+- **`interface`** — reference web frontend (Preact + viem): byte-identical in-browser signing + live-node e2e.
 <!-- - add more as they go public -->
 
 ---

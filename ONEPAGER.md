@@ -37,13 +37,14 @@
 | Compatibility | Same API + Rust SDK as the incumbent; verified by SDK-conformance test. | 与龙头相同 API+Rust SDK;一致性测试验证。 |
 | Verifiability | Byte-reproducible state roots + Merkle state proofs (JMT); no floats in consensus. | 字节级可复现状态根 + Merkle 证明(JMT);共识无浮点。 |
 | Solvency | Full liquidation waterfall: margin → insurance fund → ADL; per-block conservation invariant. | 完整清算瀑布:保证金→保险基金→ADL;逐块守恒不变量。 |
+| Bridge | EVM bridge contracts + Rust watcher/signer/relayer paths, pinned by cross-language test vectors. | EVM 桥合约 + Rust watcher/signer/relayer 路径,由跨语言测试向量锁定。 |
 | Reliability | Crash-transparent recovery, loom-verified concurrency, fuzzing, hard CI gate. | 崩溃透明恢复、loom 验证并发、fuzz、硬 CI。 |
 | Openness | Apache-2.0, self-hostable — credibly neutral by construction. | Apache-2.0、可自托管 —— 设计上即可信中立。 |
 
 ## Status / 现状
-**EN —** **P1 (single-node chain) is built and self-verifying.** End-to-end trading, persistence, proofs, crash recovery, and Hyperliquid-SDK conformance all pass under a hard CI gate. Next: multi-node BFT consensus (designed), then markets/liquidity, then mainnet.
+**EN —** **P1 (single-node chain) is built and self-verifying**, and the **markets layer is now built on top** — spot trading, isolated/cross margin, TWAP + trigger orders, sub-accounts, and volume-tiered fees with referrals, plus a reference web frontend with byte-identical in-browser signing and a live-node end-to-end suite. The reusable `perp-engine` is now a pure Rust library boundary, while the multi-node path is being built in parallel through a standalone HotStuff workspace and chain validator-mode wiring. The EVM bridge package is implemented in Foundry and cross-checked against Rust via EIP-712/calldata/event vectors. End-to-end trading, persistence, proofs, crash recovery, and Hyperliquid-SDK conformance all pass under a hard CI gate. Next: multi-validator soak/hardening, HLP-style liquidity vaults, then testnet/mainnet.
 
-**中文 —** **P1(单节点链)已完成且自校验。** 端到端交易、持久化、证明、崩溃恢复、Hyperliquid SDK 一致性均在硬 CI 门禁下通过。下一步:多节点 BFT 共识(已设计)→市场/流动性→主网。
+**中文 —** **P1(单节点链)已完成且自校验**,且**市场层现已在其之上建成** —— 现货交易、逐仓/全仓保证金、TWAP+触发订单、子账户,以及按成交量分档的手续费与推荐返佣,并配套参考 Web 前端(浏览器内签名逐字节一致 + 实节点端到端测试)。可复用 `perp-engine` 已形成纯 Rust 业务库边界;多节点路径则通过独立 HotStuff workspace 与 chain validator-mode 接线并行推进。EVM 桥合约包已用 Foundry 实现,并用 EIP-712 / calldata / event 向量与 Rust 侧交叉校验。端到端交易、持久化、证明、崩溃恢复、Hyperliquid SDK 一致性均在硬 CI 门禁下通过。下一步:多验证者 soak/hardening → HLP 式流动性金库 → 测试网/主网。
 
 <!-- TODO: replace with verified traction (testnet live, design partners, pipeline). -->
 
